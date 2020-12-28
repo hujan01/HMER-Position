@@ -3,12 +3,12 @@ Author: sigmoid
 Description: 
 Email: 595495856@qq.com
 Date: 2020-12-28 12:00:19
-LastEditTime: 2020-12-28 12:05:19
+LastEditTime: 2020-12-28 14:07:49
 '''
 import torch
 import torch.nn as nn
 
-from cbam import Cbam
+from models.cbam import Cbam
 
 # encoder params
 num_denseblock = 3

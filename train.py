@@ -3,7 +3,7 @@ Author: sigmoid
 Description: 
 Email: 595495856@qq.com
 Date: 2020-06-01 20:45:44
-LastEditTime: 2020-12-28 13:25:57
+LastEditTime: 2020-12-28 14:51:01
 '''
 
 import math,time
@@ -49,20 +49,20 @@ for kk, vv in worddicts.items():
         worddicts_r[vv] = kk
 
 # load train data and test data
-train, train_label, _ = MERData(
+train, train_label, train_list = MERData(
                                 cfg.datasets[0], cfg.datasets[1], worddicts, batch_size=1,
                                 batch_Imagesize=cfg.batch_Imagesize, maxlen=cfg.maxlen, maxImagesize=cfg.maxImagesize
                             )
 len_train = len(train)
 
-test, test_label, _ = MERData(
+test, test_label, test_list = MERData(
                                 cfg.valid_datasets[0], cfg.valid_datasets[1], worddicts, batch_size=1,
                                 batch_Imagesize=cfg.batch_Imagesize, maxlen=cfg.maxlen, maxImagesize=cfg.maxImagesize
                           )
 len_test = len(test)
 
-image_train = custom_dset(train, train_label)
-image_test = custom_dset(test, test_label)
+image_train = custom_dset(train, train_label, train_list)
+image_test = custom_dset(test, test_label, test_list)
 
 train_loader = torch.utils.data.DataLoader(
     dataset = image_train,
@@ -82,7 +82,7 @@ test_loader = torch.utils.data.DataLoader(
 
 # 加载模型
 encoder = Encoder(img_channels=2)
-decoder = Decoder(cfg.num_class)
+decoder = Decoder(cfg.num_class, cfg.batch_size)
 
 # load pre-train
 # encoder_dict = torch.load('checkpoints/encoder_48p50.pkl')
@@ -111,7 +111,7 @@ for epoch in range(1, cfg.num_epoch+1):
     decoder.train(mode=True)
 
     # 开始训练 
-    for step, (x, y) in enumerate(train_loader):
+    for step, (x, y, _) in enumerate(train_loader):
         if x.size()[0] < cfg.batch_size:  
             break
         x = x.cuda()
@@ -138,7 +138,7 @@ for epoch in range(1, cfg.num_epoch+1):
             decoder_optimizer.zero_grad()
             
             for di in range(target_length):
-                decoder_output, decoder_hidden  = decoder(decoder_input, decoder_hidden, feat, di)
+                decoder_output, decoder_hidden = decoder(decoder_input, decoder_hidden, feat, di)
     
                 y = y.unsqueeze(0)
                 for i in range(cfg.batch_size):
@@ -210,7 +210,7 @@ for epoch in range(1, cfg.num_epoch+1):
     encoder.eval()
     decoder.eval()
     print('Now, begin testing!!')
-    for step_t, (x_t, y_t) in enumerate(test_loader):
+    for step_t, (x_t, y_t, _) in enumerate(test_loader):
         # abandon <batch data
         if x_t.size()[0]<cfg.batch_size_t:
             break

@@ -3,7 +3,7 @@ Author: sigmoid
 Description: 
 Email: 595495856@qq.com
 Date: 2020-12-28 12:08:41
-LastEditTime: 2020-12-28 13:05:03
+LastEditTime: 2020-12-28 14:50:16
 '''
 import torch
 import torch.nn as nn
@@ -131,7 +131,6 @@ class PositionAttention(nn.Module):
         bs = feature.size(0) 
         
         key = self.conv_Ua(key).permute(2, 3, 0, 1) # (h, w, bs, n_prime)
-        
         attention_score = torch.tanh(key + query.squeeze(1)[None, None, :, :])
         e_t = self.fc_Va(attention_score).squeeze(3)
         e_t = e_t.permute(2, 0, 1).contiguous()

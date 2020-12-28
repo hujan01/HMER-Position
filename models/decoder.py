@@ -3,15 +3,15 @@ Author: sigmoid
 Description: 修改模型实现方式，加入Pos
 Email: 595495856@qq.com
 Date: 2020-12-18 13:04:36
-LastEditTime: 2020-12-28 13:18:06
+LastEditTime: 2020-12-28 14:48:20
 '''
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
 from config import cfg
-from convLSTM import ConvLSTM
-from attention import PositionAttention, CoverageAttention
+from models.convLSTM import ConvLSTM
+from models.attention import PositionAttention, CoverageAttention
 n = 256
 n_prime = 512
 decoder_conv_filters = 256
@@ -65,6 +65,7 @@ class PositionEnhance(nn.Module):
         )
 
     def forward(self, feature, query):
+        # feature:(bs, c, h, w)
         bs = feature.size(0)
         _, last_state_list = self.convlstm(feature.unsqueeze(1))
         key = last_state_list[0][0]
@@ -97,6 +98,7 @@ class Decoder(nn.Module):
     def __init__(
         self,
         num_classes,
+        batch_size,
         input_size=256,
         hidden_size=256,
         embedding_dim=256,
@@ -121,6 +123,7 @@ class Decoder(nn.Module):
         super(Decoder, self).__init__()
 
         context_size = 684 
+        self.bs = batch_size
         self.embedding = nn.Embedding(num_classes, embedding_dim)
         self.pos_embedding = nn.Embedding(cfg.maxlen, pos_embedding_dim)
         self.gru1 = nn.GRU(
@@ -162,11 +165,11 @@ class Decoder(nn.Module):
     # multiplication is tranposed back.
     def forward(self, x, hidden, feature, idx):
         embedded = self.embedding(x)
-        pos = torch.LongTensor([idx]*cfg.batch_size).view(-1, 1).cuda()  # pos
+        pos = torch.LongTensor([idx]*self.bs).view(-1, 1).cuda()  # pos
         pos_embedded = self.pos_embedding(pos)
         
         pred, _ = self.gru1(embedded, hidden)
-        gt = self.coverage_attn(feature, pred) # (bs, 684, L)
+        gt = self.coverage_attn(feature, pred) # (bs, 684, L) L=h*w
         
         gt_hat = self.pos_enhance(feature, pos_embedded)
 

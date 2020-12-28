@@ -3,7 +3,7 @@ Author: sigmoid
 Description: 
 Email: 595495856@qq.com
 Date: 2020-12-13 19:51:52
-LastEditTime: 2020-12-13 20:20:52
+LastEditTime: 2020-12-28 14:53:51
 '''
 import numpy as np
 import torch
@@ -15,18 +15,19 @@ from torch import optim
 
 class custom_dset(data.Dataset):
     """ 格式化数据 """
-    def __init__(self, train, train_label):
+    def __init__(self, train, train_label, uidList):
         self.train = train
         self.train_label = train_label
-
+        self.uidList = uidList
     def __getitem__(self, index):
         train_setting = torch.from_numpy(np.array(self.train[index]))
         label_setting = torch.from_numpy(np.array(self.train_label[index])).type(torch.LongTensor)
+        uid_setting   = self.uidList[index]
+
         size = train_setting.size()
         train_setting = train_setting.view(1, size[2], size[3])
         label_setting = label_setting.view(-1)
-        return train_setting, label_setting
-
+        return train_setting, label_setting, uid_setting
     def __len__(self):
         return len(self.train)
         
@@ -84,7 +85,7 @@ def collate_fn_single(batch):
 def collate_fn_double(batch):
     """ 引入掩码 双通道"""
     batch.sort(key=lambda x: len(x[1]), reverse=True)
-    img, label = zip(*batch)
+    img, label, uid = zip(*batch)
     aa1 = 0
     bb1 = 0
     k = 0
@@ -128,7 +129,7 @@ def collate_fn_double(batch):
         k1 = k1+1
 
     img_padding_mask = img_padding_mask/255.0
-    return img_padding_mask, label_padding
+    return img_padding_mask, label_padding, uid[0]
 
 def cmp_result(label, rec):
     """ 编辑距离 """
@@ -143,6 +144,21 @@ def cmp_result(label, rec):
             dist_mat[i,j] = min(hit_score, ins_score, del_score)
     dist = dist_mat[len(label), len(rec)]
     return dist, len(label)
+
+def get_all_dist(label, rec):
+    """ 得到插入，删除，修改 """
+    dist_mat = np.zeros((len(label)+1, len(rec)+1), dtype='int32')
+    dist_mat[0,:] = range(len(rec) + 1)
+    dist_mat[:,0] = range(len(label) + 1)
+    for i in range(1, len(label) + 1):
+        for j in range(1, len(rec) + 1):
+            sub_score = dist_mat[i-1, j-1] + (label[i-1] != rec[j-1]) #替换， 相同加0，不同加1
+            ins_score = dist_mat[i,j-1] + 1 #插入
+            del_score = dist_mat[i-1, j] + 1 #删除
+            dist_mat[i,j] = min(sub_score, ins_score, del_score)
+
+    dist = dist_mat[len(label), len(rec)]
+    return dist, len(label), sub_score, ins_score, del_score
 
 def load_dict(dictFile):
     fp = open(dictFile)

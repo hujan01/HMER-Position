@@ -3,7 +3,7 @@ Author: sigmoid
 Description: 
 Email: 595495856@qq.com
 Date: 2020-06-01 20:45:44
-LastEditTime: 2020-12-28 14:51:01
+LastEditTime: 2021-01-04 15:47:56
 '''
 
 import math,time
@@ -23,8 +23,8 @@ import torch.utils.data as data
 from torch import optim
 from tensorboardX import SummaryWriter
 
-from models.encoder import Encoder
-from models.decoder import Decoder
+from modules.encoder import Encoder
+from modules.decoder import Decoder
 from dataset import MERData
 from config import cfg  
 from utils.util import collate_fn_double, custom_dset, cmp_result, load_dict
@@ -85,10 +85,10 @@ encoder = Encoder(img_channels=2)
 decoder = Decoder(cfg.num_class, cfg.batch_size)
 
 # load pre-train
-# encoder_dict = torch.load('checkpoints/encoder_48p50.pkl')
-# encoder.load_state_dict(encoder_dict)
-# decoder_dict = torch.load('checkpoints/attn_decoder_48p50.pkl')
-# decoder.load_state_dict(decoder_dict)
+encoder_dict = torch.load('checkpoints/encoder_posAware_pre.pkl')
+encoder.load_state_dict(encoder_dict)
+decoder_dict = torch.load('checkpoints/attn_decoder_posAware_pre.pkl')
+decoder.load_state_dict(decoder_dict)
 
 encoder = encoder.cuda()
 decoder = decoder.cuda()
@@ -97,8 +97,8 @@ decoder = decoder.cuda()
 criterion = nn.CrossEntropyLoss().cuda()
 encoder_optimizer = optim.SGD(encoder.parameters(), lr=cfg.lr, momentum=0.9, weight_decay=10e-3)
 decoder_optimizer = optim.SGD(decoder.parameters(), lr=cfg.lr, momentum=0.9, weight_decay=10e-3)
-scheduler_encoder = optim.lr_scheduler.MultiStepLR(encoder_optimizer, [27, 50, 70], gamma=0.5)
-scheduler_decoder = optim.lr_scheduler.MultiStepLR(encoder_optimizer, [27, 50, 70], gamma=0.5)
+scheduler_encoder = optim.lr_scheduler.MultiStepLR(encoder_optimizer, [27, 50], gamma=0.5)
+scheduler_decoder = optim.lr_scheduler.MultiStepLR(encoder_optimizer, [27, 50], gamma=0.5)
 
 for epoch in range(1, cfg.num_epoch+1):
     ud_epoch = time.time()

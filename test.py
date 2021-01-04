@@ -4,10 +4,11 @@
 @Author: jianh
 @Email: 595495856@qq.com
 @Date: 2020-02-19 16:51:37
-LastEditTime: 2020-12-28 14:54:24
+LastEditTime: 2020-12-31 15:24:47
 '''
 import math
 import os 
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 import cv2
 from PIL import Image
@@ -19,8 +20,8 @@ import torch.nn.functional as F
 import torch.utils.data as data
 
 from dataset import MERData
-from models.encoder import Encoder
-from models.decoder import Decoder
+from modules.encoder import Encoder
+from modules.decoder import Decoder
 from config import cfg
 from utils.util import get_all_dist, load_dict, custom_dset, collate_fn_double
 torch.backends.cudnn.benchmark = False

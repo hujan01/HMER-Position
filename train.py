@@ -10,7 +10,7 @@ import math,time
 import random
 import os   
 from datetime import datetime
-os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 from PIL import Image
 import matplotlib.pyplot as plt

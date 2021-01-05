@@ -4,7 +4,7 @@
 @Author: jianh
 @Email: 595495856@qq.com
 @Date: 2020-02-19 16:51:37
-LastEditTime: 2020-12-31 15:24:47
+LastEditTime: 2021-01-04 16:52:35
 '''
 import math
 import os 
@@ -27,7 +27,7 @@ from utils.util import get_all_dist, load_dict, custom_dset, collate_fn_double
 torch.backends.cudnn.benchmark = False
 
 # 配置参数
-valid_datasets = ['data/test.pkl', 'data/test2016.txt']
+valid_datasets = ['data/valid.pkl', 'data/label/test_caption_2014.txt']
 dictionaries = 'data/dictionary.txt'
 result_path = "results/recognition.txt"
 

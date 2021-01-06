@@ -3,7 +3,7 @@ Author: sigmoid
 Description: 修改模型实现方式，加入Pos
 Email: 595495856@qq.com
 Date: 2020-12-18 13:04:36
-LastEditTime: 2020-12-31 15:21:31
+LastEditTime: 2021-01-06 21:05:56
 '''
 import torch
 import torch.nn as nn
@@ -47,15 +47,24 @@ class PositionEnhance(nn.Module):
     def __init__(
         self,
         position_dim=512,
-        hidden_size=128,
+        output_size=128,
         device=device
         ):
         super(PositionEnhance, self).__init__()
         self.context_size = 684
-        self.hidden_size = hidden_size
         self.device = device
-        
+        self.conv1 = nn.Conv2d(in_channels=self.context_size,
+                              out_channels=output_size,
+                              kernel_size=3,
+                              padding=1,
+                              bias=True)
+        self.conv2 = nn.Conv2d(in_channels=output_size,
+                              out_channels=output_size,
+                              kernel_size=3,
+                              padding=1,
+                              bias=True)                    
         self.convlstm = ConvLSTM(self.context_size, 64, (3, 3), 2, True, True, False)
+
         self.positin_attn = PositionAttention(
             self.context_size,
             decoder_conv_filters,
@@ -67,8 +76,9 @@ class PositionEnhance(nn.Module):
     def forward(self, feature, query):
         # feature:(bs, c, h, w)
         bs = feature.size(0)
-        _, last_state_list = self.convlstm(feature.unsqueeze(1))
-        key = last_state_list[0][0]
+        # _, last_state_list = self.convlstm(feature.unsqueeze(1))
+        key = self.conv2(torch.sigmoid(self.conv1(feature)))
+        # _, last_state_list = self.convgru(feature.unsqueeze(1))
         gt_hat = self.positin_attn(feature, query, key) # gt_hat:(bs, context_size, L)
         return gt_hat
 

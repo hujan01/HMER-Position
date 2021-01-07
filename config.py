@@ -1,7 +1,7 @@
 '''
 @Author: your name
 @Date: 2020-01-06 15:08:07
-LastEditTime: 2021-01-06 21:05:18
+LastEditTime: 2021-01-07 10:46:01
 LastEditors: Please set LastEditors
 @Description: In User Settings Edit
 @FilePath: /HMER/config.py
@@ -24,8 +24,8 @@ class Config():
 
     num_epoch = 60
     lr = 0.0001
-    batch_size = 4
-    batch_size_t = 4
+    batch_size = 2
+    batch_size_t = 2
     teacher_forcing_ratio = 0.8
  
     num_workers = 4

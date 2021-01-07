@@ -3,7 +3,7 @@ Author: sigmoid
 Description: 修改模型实现方式，加入Pos
 Email: 595495856@qq.com
 Date: 2020-12-18 13:04:36
-LastEditTime: 2021-01-06 21:05:56
+LastEditTime: 2021-01-07 10:03:45
 '''
 import torch
 import torch.nn as nn
@@ -54,12 +54,13 @@ class PositionEnhance(nn.Module):
         self.context_size = 684
         self.device = device
         self.conv1 = nn.Conv2d(in_channels=self.context_size,
-                              out_channels=output_size,
+                              out_channels=64,
                               kernel_size=3,
                               padding=1,
                               bias=True)
-        self.conv2 = nn.Conv2d(in_channels=output_size,
-                              out_channels=output_size,
+
+        self.conv2 = nn.Conv2d(in_channels=64,
+                              out_channels=128,
                               kernel_size=3,
                               padding=1,
                               bias=True)                    

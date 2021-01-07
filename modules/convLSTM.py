@@ -3,7 +3,7 @@ Author: sigmoid
 Description: convLSTM模块
 Email: 595495856@qq.com
 Date: 2020-12-25 10:56:02
-LastEditTime: 2021-01-06 20:38:49
+LastEditTime: 2021-01-07 11:07:35
 '''
 import torch.nn as nn
 import torch
@@ -194,3 +194,35 @@ class ConvLSTM(nn.Module):
         if not isinstance(param, list):
             param = [param] * num_layers
         return param
+
+class ConvSigmoid(nn.Module):
+    def __init__(self, input_dim, output_dim, kernel_size,
+                 batch_first=False, bias=True, return_all_layers=False):
+        super(ConvSigmoid, self).__init__()
+
+        self.input_dim = input_dim
+        self.output_dim = output_dim
+
+        self.kernel_size = kernel_size
+        self.padding = kernel_size[0] // 2, kernel_size[1] // 2
+        self.bias = bias
+
+        self.conv = nn.Conv2d(in_channels=self.input_dim,
+                              out_channels=3 * self.output_dim,
+                              kernel_size=self.kernel_size,
+                              padding=self.padding,
+                              bias=self.bias)
+
+    def forward(self, input_tensor):
+
+        b, c, h, w = input_tensor.size()
+
+        out = self.conv(input_tensor)
+        cc_i, cc_o, cc_g = torch.split(out, self.output_dim, dim=1)
+        i = torch.sigmoid(cc_i)
+        o = torch.sigmoid(cc_o)
+        g = torch.tanh(cc_g)
+
+        out = o * torch.tanh(i * g)
+
+        return out

@@ -3,7 +3,7 @@ Author: sigmoid
 Description: 
 Email: 595495856@qq.com
 Date: 2020-12-28 12:08:41
-LastEditTime: 2021-01-06 21:00:34
+LastEditTime: 2021-01-07 10:24:48
 '''
 import torch
 import torch.nn as nn
@@ -120,7 +120,7 @@ class PositionAttention(nn.Module):
         self.device = device
 
         self.fc_Wa = nn.Linear(n, n_prime)
-        self.conv_Ua = nn.Conv2d(128, n_prime, kernel_size=1)
+        self.conv_Ua = nn.Conv2d(64, n_prime, kernel_size=1)
         self.fc_Va = nn.Linear(n_prime, 1)
         
         nn.init.xavier_normal_(self.fc_Wa.weight)

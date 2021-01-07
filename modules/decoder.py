@@ -3,14 +3,14 @@ Author: sigmoid
 Description: 修改模型实现方式，加入Pos
 Email: 595495856@qq.com
 Date: 2020-12-18 13:04:36
-LastEditTime: 2021-01-07 10:03:45
+LastEditTime: 2021-01-07 11:26:42
 '''
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
 from config import cfg
-from modules.convLSTM import ConvLSTM
+from modules.convLSTM import ConvLSTM, ConvSigmoid, BottleneckSigmoid
 from modules.attention import PositionAttention, CoverageAttention
 n = 256
 n_prime = 512
@@ -47,25 +47,25 @@ class PositionEnhance(nn.Module):
     def __init__(
         self,
         position_dim=512,
-        output_size=128,
+        output_size=64,
         device=device
         ):
         super(PositionEnhance, self).__init__()
         self.context_size = 684
         self.device = device
-        self.conv1 = nn.Conv2d(in_channels=self.context_size,
-                              out_channels=64,
-                              kernel_size=3,
-                              padding=1,
-                              bias=True)
-
-        self.conv2 = nn.Conv2d(in_channels=64,
-                              out_channels=128,
-                              kernel_size=3,
-                              padding=1,
-                              bias=True)                    
-        self.convlstm = ConvLSTM(self.context_size, 64, (3, 3), 2, True, True, False)
-
+        # self.conv1 = nn.Conv2d(in_channels=self.context_size,
+        #                       out_channels=output_size,
+        #                       kernel_size=3,
+        #                       padding=1,
+        #                       bias=True)
+        # self.conv2 = nn.Conv2d(in_channels=output_size,
+        #                       out_channels=output_size,
+        #                       kernel_size=3,
+        #                       padding=1,
+        #                       bias=True)                    
+        # self.convlstm = ConvLSTM(self.context_size, 64, (3, 3), 2, True, True, False)
+        self.convsigmoid = ConvSigmoid(self.context_size, 64, (3, 3), True, True, False)
+        self.bottle = BottleneckSigmoid(self.context_size, 64)
         self.positin_attn = PositionAttention(
             self.context_size,
             decoder_conv_filters,
@@ -78,8 +78,10 @@ class PositionEnhance(nn.Module):
         # feature:(bs, c, h, w)
         bs = feature.size(0)
         # _, last_state_list = self.convlstm(feature.unsqueeze(1))
-        key = self.conv2(torch.sigmoid(self.conv1(feature)))
+        # key = self.conv2(torch.sigmoid(self.conv1(feature)))
         # _, last_state_list = self.convgru(feature.unsqueeze(1))
+        # key = self.convsigmoid(feature)
+        key = self.bottle(feature)
         gt_hat = self.positin_attn(feature, query, key) # gt_hat:(bs, context_size, L)
         return gt_hat
 

@@ -3,7 +3,7 @@ Author: sigmoid
 Description: 修改模型实现方式，加入Pos
 Email: 595495856@qq.com
 Date: 2020-12-18 13:04:36
-LastEditTime: 2021-01-07 11:26:42
+LastEditTime: 2021-01-14 16:01:27
 '''
 import torch
 import torch.nn as nn
@@ -12,6 +12,7 @@ import torch.nn.functional as F
 from config import cfg
 from modules.convLSTM import ConvLSTM, ConvSigmoid, BottleneckSigmoid
 from modules.attention import PositionAttention, CoverageAttention
+from modules.non_local import NONLocalBlock2D
 n = 256
 n_prime = 512
 decoder_conv_filters = 256
@@ -47,25 +48,17 @@ class PositionEnhance(nn.Module):
     def __init__(
         self,
         position_dim=512,
-        output_size=64,
+        output_size=128,
         device=device
         ):
         super(PositionEnhance, self).__init__()
         self.context_size = 684
         self.device = device
-        # self.conv1 = nn.Conv2d(in_channels=self.context_size,
-        #                       out_channels=output_size,
-        #                       kernel_size=3,
-        #                       padding=1,
-        #                       bias=True)
-        # self.conv2 = nn.Conv2d(in_channels=output_size,
-        #                       out_channels=output_size,
-        #                       kernel_size=3,
-        #                       padding=1,
-        #                       bias=True)                    
-        # self.convlstm = ConvLSTM(self.context_size, 64, (3, 3), 2, True, True, False)
-        self.convsigmoid = ConvSigmoid(self.context_size, 64, (3, 3), True, True, False)
-        self.bottle = BottleneckSigmoid(self.context_size, 64)
+        # self.conv1x1 = nn.Conv2d(self.context_size, output_size, kernel_size=1, bias=False)                 
+        self.convlstm = ConvLSTM(self.context_size, 64, (3, 3), 2, True, True, False)
+        # self.non_local2d = NONLocalBlock2D(self.context_size)
+        # self.convsigmoid = ConvSigmoid(self.context_size, 64, (3, 3), True, True, False)
+        # self.bottle = BottleneckSigmoid(self.context_size, 64)
         self.positin_attn = PositionAttention(
             self.context_size,
             decoder_conv_filters,
@@ -77,11 +70,14 @@ class PositionEnhance(nn.Module):
     def forward(self, feature, query):
         # feature:(bs, c, h, w)
         bs = feature.size(0)
-        # _, last_state_list = self.convlstm(feature.unsqueeze(1))
+        _, last_state_list = self.convlstm(feature.unsqueeze(1))
         # key = self.conv2(torch.sigmoid(self.conv1(feature)))
         # _, last_state_list = self.convgru(feature.unsqueeze(1))
+        key = last_state_list[0][0]
+        # key = self.non_local2d(feature)
+        # key = self.conv1x1(key)
         # key = self.convsigmoid(feature)
-        key = self.bottle(feature)
+        # key = self.bottle(feature)
         gt_hat = self.positin_attn(feature, query, key) # gt_hat:(bs, context_size, L)
         return gt_hat
 
@@ -98,10 +94,13 @@ class DynamicallyFusing(nn.Module):
         nn.init.xavier_normal_(self.fc_Wp.weight)
         
     def forward(self, gt, gt_hat):
+        # gtf = gt+gt_hat
         gt_cat = torch.cat((gt, gt_hat), 1).transpose(1, 2)
         wt = F.sigmoid(self.fc_Wa(gt_cat)) # (bs, L, c)
         gtf = torch.mul(wt, self.fc_Wp(gt_cat))
         return gtf.transpose(1, 2)
+        return gtf
+
 
 class Decoder(nn.Module):
     """Decoder
@@ -157,7 +156,7 @@ class Decoder(nn.Module):
         
         self.W_o = nn.Parameter(torch.empty((num_classes, embedding_dim // 2)))
         self.W_s = nn.Parameter(torch.empty((embedding_dim, hidden_size)))
-        self.W_c = nn.Parameter(torch.empty((embedding_dim, input_size)))
+        self.W_c = nn.Parameter(torch.empty((embedding_dim, hidden_size)))
     
         self.maxout = Maxout(2)
         self.hidden_size = hidden_size

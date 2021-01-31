@@ -3,14 +3,14 @@ Author: sigmoid
 Description: 
 Email: 595495856@qq.com
 Date: 2020-06-01 20:45:44
-LastEditTime: 2021-01-07 10:53:36
+LastEditTime: 2021-01-15 12:11:51
 '''
 
 import math,time
 import random
 import os   
 from datetime import datetime
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
 from PIL import Image
 import matplotlib.pyplot as plt
@@ -85,10 +85,10 @@ encoder = Encoder(img_channels=2)
 decoder = Decoder(cfg.num_class, cfg.batch_size)
 
 # load pre-train
-# encoder_dict = torch.load('checkpoints/encoder_posAware_pre.pkl')
-# encoder.load_state_dict(encoder_dict)
-# decoder_dict = torch.load('checkpoints/attn_decoder_posAware_pre.pkl')
-# decoder.load_state_dict(decoder_dict)
+encoder_dict = torch.load('checkpoints/encoder_posAware_pre2.pkl')
+encoder.load_state_dict(encoder_dict)
+decoder_dict = torch.load('checkpoints/attn_decoder_posAware_pre2.pkl')
+decoder.load_state_dict(decoder_dict)
 
 encoder = encoder.cuda()
 decoder = decoder.cuda()
@@ -97,8 +97,8 @@ decoder = decoder.cuda()
 criterion = nn.CrossEntropyLoss().cuda()
 encoder_optimizer = optim.SGD(encoder.parameters(), lr=cfg.lr, momentum=0.9, weight_decay=10e-3)
 decoder_optimizer = optim.SGD(decoder.parameters(), lr=cfg.lr, momentum=0.9, weight_decay=10e-3)
-scheduler_encoder = optim.lr_scheduler.MultiStepLR(encoder_optimizer, [27, 50], gamma=0.5)
-scheduler_decoder = optim.lr_scheduler.MultiStepLR(encoder_optimizer, [27, 50], gamma=0.5)
+scheduler_encoder = optim.lr_scheduler.MultiStepLR(encoder_optimizer, [10], gamma=0.1)
+scheduler_decoder = optim.lr_scheduler.MultiStepLR(encoder_optimizer, [10], gamma=0.1)
 
 for epoch in range(1, cfg.num_epoch+1):
     ud_epoch = time.time()
@@ -286,8 +286,8 @@ for epoch in range(1, cfg.num_epoch+1):
         best_wer = wer
         print('currect ExpRate:{}'.format(exprate))
         print("saving the model....")
-        torch.save(encoder.state_dict(), 'checkpoints/encoder_posAware1.pkl')
-        torch.save(decoder.state_dict(), 'checkpoints/attn_decoder_posAware1.pkl')
+        torch.save(encoder.state_dict(), 'checkpoints/encoder_posAware_convLSTM.pkl')
+        torch.save(decoder.state_dict(), 'checkpoints/attn_decoder_posAware_convLSTM.pkl')
         print("done")
     else:
         print('the best is %f' % (exprate))

@@ -1,9 +1,9 @@
 '''
 Author: sigmoid
-Description: convLSTM模块
+Description: 
 Email: 595495856@qq.com
 Date: 2020-12-25 10:56:02
-LastEditTime: 2021-01-07 11:07:35
+LastEditTime: 2021-01-13 17:58:13
 '''
 import torch.nn as nn
 import torch
@@ -61,7 +61,6 @@ class ConvLSTMCell(nn.Module):
         height, width = image_size
         return (torch.zeros(batch_size, self.hidden_dim, height, width, device=self.conv.weight.device),
                 torch.zeros(batch_size, self.hidden_dim, height, width, device=self.conv.weight.device))
-
 
 class ConvLSTM(nn.Module):
 
@@ -208,7 +207,7 @@ class ConvSigmoid(nn.Module):
         self.bias = bias
 
         self.conv = nn.Conv2d(in_channels=self.input_dim,
-                              out_channels=3 * self.output_dim,
+                              out_channels=4 * self.output_dim,
                               kernel_size=self.kernel_size,
                               padding=self.padding,
                               bias=self.bias)
@@ -218,11 +217,28 @@ class ConvSigmoid(nn.Module):
         b, c, h, w = input_tensor.size()
 
         out = self.conv(input_tensor)
-        cc_i, cc_o, cc_g = torch.split(out, self.output_dim, dim=1)
+        cc_i, _, cc_o, cc_g = torch.split(out, self.output_dim, dim=1)
         i = torch.sigmoid(cc_i)
         o = torch.sigmoid(cc_o)
         g = torch.tanh(cc_g)
 
-        out = o * torch.tanh(i * g)
-
+        out = torch.tanh(i * g)
         return out
+
+class BottleneckSigmoid(nn.Module):
+    def __init__(self, in_channels, out_channels, stride=1):
+        super(BottleneckSigmoid, self).__init__()
+
+        self.residual = nn.Sequential(
+            nn.Conv2d(in_channels, out_channels, kernel_size=1, bias=False),
+            nn.BatchNorm2d(out_channels),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(out_channels, out_channels, stride=stride, kernel_size=5, padding=2, bias=False),
+            nn.BatchNorm2d(out_channels),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(out_channels, out_channels * 2, kernel_size=1, bias=False),
+            nn.BatchNorm2d(out_channels * 2)
+        )
+
+    def forward(self, x):
+        return self.residual(x)

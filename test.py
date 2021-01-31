@@ -4,11 +4,11 @@
 @Author: jianh
 @Email: 595495856@qq.com
 @Date: 2020-02-19 16:51:37
-LastEditTime: 2021-01-04 16:52:35
+LastEditTime: 2021-01-31 15:12:20
 '''
 import math
 import os 
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
 import cv2
 from PIL import Image
@@ -32,7 +32,7 @@ dictionaries = 'data/dictionary.txt'
 result_path = "results/recognition.txt"
 
 Imagesize = 500000
-batch_size_t = 1
+batch_size_t = 4
 maxlen = 70
 maxImagesize = 100000
 hidden_size = 256
@@ -59,13 +59,13 @@ test_loader = torch.utils.data.DataLoader(
 
 # 1. 加载模型
 encoder = Encoder(img_channels=2)
-decoder = Decoder(112, batch_size_t)
+decoder = Decoder(cfg.num_class, 1)
 
 encoder = encoder.cuda()
 decoder = decoder.cuda()
 
-encoder.load_state_dict(torch.load('checkpoints/encoder_48p50.pkl'))
-decoder.load_state_dict(torch.load('checkpoints/attn_decoder_48p50.pkl'))
+encoder.load_state_dict(torch.load('checkpoints/encoder_48p88.pkl'))
+decoder.load_state_dict(torch.load('checkpoints/attn_decoder_48p88.pkl'))
 
 encoder.eval()
 decoder.eval()
@@ -112,7 +112,7 @@ for step_t, (x_t, y_t, uid) in enumerate(test_loader):
         decoder_input_t = decoder_input_t.view(batch_size_t, 1)
         
         # prediction
-        prediction[:, i] = decoder_input_t
+        prediction[:, i] = decoder_input_t.flatten()
 
     for i in range(batch_size_t):
         for j in range(maxlen):
